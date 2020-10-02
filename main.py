@@ -1,7 +1,5 @@
 # Pygame General Tutorial
 import pygame
-pygame.init() # essential after import to initiate the module
-
 
 WIN_WIDTH = 500
 WIN_HEIGHT = 480
@@ -48,14 +46,6 @@ class player(object):
 		return
 
 
-
-# Attributes for the initial rectangle character
-x = 50
-y = 400	
-width = 64 # Use the width dimension of the sprite
-height = 64 # Use the height dimension of the sprite
-
-
 def redrawGameWindow():
 	win.blit(bg, (0,0))
 	man.draw(win)
@@ -63,7 +53,7 @@ def redrawGameWindow():
 	return
 
 # Main loop
-man = player(50, 400, 64, 64) # Instantiate the player with default/init values
+man = player(50, 400, 64, 64) # Instantiate the player with default/init values, 64 x 64 = dimensions of the sprite
 run = True
 
 while run:
