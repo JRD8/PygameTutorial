@@ -1,4 +1,4 @@
-# Pygame General Tutorial
+	# Pygame General Tutorial
 import pygame
 
 WIN_WIDTH = 500
@@ -17,6 +17,22 @@ char = pygame.image.load('assets/standing.png')
 clock = pygame.time.Clock()
 
 
+class projectile(object):
+	def __init__(self, x, y, radius, color, facing):
+		self.x = x
+		self.y = y
+		self.radius = radius
+		self.color = color
+		self.facing = facing
+		self.vel = 8 * facing # Arbitrary value for vel
+	
+	def draw(win):
+		pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
+
+
+
+
+
 class player(object):
 	def __init__(self, x, y, width, height):
 		self.x = x
@@ -29,20 +45,26 @@ class player(object):
 		self.left = False # Left walk action flag
 		self.right = False # Right walk action flag
 		self.walkCount = 0 # Walk action counter
+		self.standing = True # Standing or moving flag
 		return
 
 	def draw(self, win):
 		if self.walkCount + 1 >= 27:
 			self.walkCount = 0
 
-		if self.left: # If we are walking left, ie left = True
-			win.blit(walkLeft[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
-			self.walkCount += 1
-		elif self.right: # If we are walking right, ie right = True
-			win.blit(walkRight[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
-			self.walkCount += 1
+		if not (self.standing): # If moving...
+			if self.left: # If we are walking left, ie left = True
+				win.blit(walkLeft[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
+				self.walkCount += 1
+			elif self.right: # If we are walking right, ie right = True
+				win.blit(walkRight[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
+				self.walkCount += 1
 		else: # If we are standing still or jumping
-			win.blit(char, (self.x, self.y)) # In that case, show the standing character
+			#win.blit(char, (self.x, self.y)) # In that case, show the standing character
+			if self.right:
+				win.blit(walkRight[0], (self.x, self.y))
+			else:
+				win.blit(walkLeft[0], (self.x, self.y))
 		return
 
 
@@ -70,15 +92,16 @@ while run:
 		man.x -= man.vel
 		man.left = True # Toggle the directional flags
 		man.right = False # Toggle the directional flags
+		man.standing = False
 	
 	elif keys[pygame.K_RIGHT] and man.x < (WIN_WIDTH - man.width): # Have to constrain the edges...
 		man.x += man.vel
 		man.left = False # Toggle the directional flags
 		man.right = True # Toggle the directional flags
+		man.standing = False
 	
 	else:
-		man.left = False
-		man.right = False
+		man.standing = True
 		man.walkCount = 0
 	
 
