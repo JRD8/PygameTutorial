@@ -26,11 +26,8 @@ class projectile(object):
 		self.facing = facing
 		self.vel = 8 * facing # Arbitrary value for vel
 	
-	def draw(win):
+	def draw(self, win):
 		pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
-
-
-
 
 
 class player(object):
@@ -70,12 +67,15 @@ class player(object):
 
 def redrawGameWindow():
 	win.blit(bg, (0,0))
-	man.draw(win)
+	man.draw(win) # Draw the player
+	for bullet in bullets: # Draw the bullets
+		bullet.draw(win)
 	pygame.display.update() # Have to update the display to draw the object
 	return
 
 # Main loop
 man = player(50, 400, 64, 64) # Instantiate the player with default/init values, 64 x 64 = dimensions of the sprite
+bullets = [] # This list is way to implement multiple bullets.
 run = True
 
 while run:
@@ -86,7 +86,23 @@ while run:
 		if event.type == pygame.QUIT: # If quit event, quit the loop
 			run = False
 
+	for bullet in bullets: # Multple bullet handling routing
+		if bullet.x < WIN_WIDTH and bullet.x > 0: # If bullet is on the screen, move it
+			bullet.x += bullet.vel
+		else: # If bullet is not on the screen, pop it from the list and remove it
+			bullets.pop(bullets.index(bullet))
+			
+
 	keys = pygame.key.get_pressed()
+
+	if keys[pygame.K_SPACE]: # Shoot Action Key
+		if man.left: # If man is facing left...
+			facing  = -1
+		else:
+			facing = 1 # Or else man is facing right...
+		if len(bullets) < 5: # This is the max amount of bullets that shooter can have on screen at once, can't spam bullets
+			bullets.append(projectile(round(man.x + man.width //2), round(man.y + man.height //2), 6, (0,0,0), facing)) # Append the bullets list with a newly created/instantiated projectile
+
 
 	if keys[pygame.K_LEFT] and man.x > 0: # Have to constrain the edges...
 		man.x -= man.vel
@@ -106,7 +122,7 @@ while run:
 	
 
 	if not (man.isJump): # Constrain up/down/additional jumps during jumps
-		if keys[pygame.K_SPACE]: # Jump key
+		if keys[pygame.K_UP]: # Jump Acton Key
 			man.isJump = True # Toggle jump action flag
 			man.left = False
 			man.right = False
