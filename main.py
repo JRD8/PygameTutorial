@@ -17,10 +17,11 @@ char = pygame.image.load('assets/standing.png')
 
 clock = pygame.time.Clock()
 
+score = 0
+
 class enemy(object):
 	walkRight = [pygame.image.load("assets/R1E.png"), pygame.image.load('assets/R2E.png'), pygame.image.load('assets/R3E.png'), pygame.image.load('assets/R4E.png'), pygame.image.load('assets/R5E.png'), pygame.image.load('assets/R6E.png'), pygame.image.load('assets/R7E.png'), pygame.image.load('assets/R8E.png'), pygame.image.load('assets/R9E.png'), pygame.image.load('assets/R10E.png'), pygame.image.load('assets/R11E.png')]
 	walkLeft = [pygame.image.load('assets/L1E.png'), pygame.image.load('assets/L2E.png'), pygame.image.load('assets/L3E.png'), pygame.image.load('assets/L4E.png'), pygame.image.load('assets/L5E.png'), pygame.image.load('assets/L6E.png'), pygame.image.load('assets/L7E.png'), pygame.image.load('assets/L8E.png'), pygame.image.load('assets/L9E.png'), pygame.image.load('assets/L10E.png'), pygame.image.load('assets/L11E.png')]
-	hits_font = pygame.font.SysFont("comicsans", 30)
 
 	def __init__(self, x, y, width, height, end):
 		self.x = x
@@ -32,26 +33,30 @@ class enemy(object):
 		self.vel = 3
 		self.path = [self.x, self.end] # X Coordinates of where enemy starts and where ends
 		self.hitbox = (self.x + 17, self.y + 2, 31, 57)
-		self.numHits = 0
+		self.health = 10
+		self.visible = True
 
 	def draw(self, win):
 		self.move()
 
-		if self.walkCount + 1 >= 33: # 33 = 3 x 11 enemy sprite frames
-			self.walkCount = 0
+		if self.visible: # Only draw enemy if flagges as visible (i.e., Health > 0)
 
-		if self.vel > 0: # If vel is positive, enemy is moving right
-			win.blit(self.walkRight[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
-			self.walkCount += 1
-		else: # If vel is negative, enemy is moving left
-			win.blit(self.walkLeft[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
-			self.walkCount += 1
-		self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+			if self.walkCount + 1 >= 33: # 33 = 3 x 11 enemy sprite frames
+				self.walkCount = 0
 
-		hits_label = self.hits_font.render(f"Goblin Hits: {self.numHits}", 1, (255,0,0))
-		win.blit(hits_label, (WIN_WIDTH/2 - hits_label.get_width()/2, 10))
-		
-		pygame.draw.rect(win, (255,0,0), (self.hitbox), 2)
+			if self.vel > 0: # If vel is positive, enemy is moving right
+				win.blit(self.walkRight[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
+				self.walkCount += 1
+			else: # If vel is negative, enemy is moving left
+				win.blit(self.walkLeft[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
+				self.walkCount += 1
+			
+			# Health Bar/Blend
+			pygame.draw.rect(win, (255,0,0), (self.hitbox[0], self.hitbox[1] - 20, 50, 10)) # Red Bar
+			pygame.draw.rect(win, (0,128,0), (self.hitbox[0], self.hitbox[1] - 20, 50 - (5 * (10 - self.health)), 10)) # Green Bar
+
+			self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+			# pygame.draw.rect(win, (255,0,0), (self.hitbox), 2)
 
 
 	def move(self):
@@ -69,7 +74,10 @@ class enemy(object):
 				self.walkCount = 0
 
 	def hit(self):
-		self.numHits += 1
+		if self.health > 0:
+			self.health -= 1 # Decrement health
+		else: # If health down to 0. then flag enemy as invisible
+			self.visible = False
 
 
 class projectile(object):
@@ -91,7 +99,7 @@ class player(object):
 		self.y = y
 		self.width = width
 		self.height = height
-		self.vel = 10 # Velocity, set how fast the character moves
+		self.vel = 4 # Velocity, set how fast the character moves
 		self.isJump = False # Jump action flag
 		self.jumpCount = 10 # Jump action counter
 		self.left = False # Left walk action flag
@@ -113,24 +121,30 @@ class player(object):
 				win.blit(walkRight[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
 				self.walkCount += 1
 		else: # If we are standing still or jumping
-			#win.blit(char, (self.x, self.y)) # In that case, show the standing character
+			# win.blit(char, (self.x, self.y)) # In that case, show the standing character
 			if self.right:
 				win.blit(walkRight[0], (self.x, self.y))
 			else:
 				win.blit(walkLeft[0], (self.x, self.y))
 		self.hitbox = (self.x + 17, self.y + 11, 29, 52)
-		pygame.draw.rect(win, (255,0,0), (self.hitbox), 2)
+		# pygame.draw.rect(win, (255,0,0), (self.hitbox), 2)
 
 
 def redrawGameWindow():
-	win.blit(bg, (0,0))
+	win.blit(bg, (0,0)) # Draw the background
+
+	text = font.render("Score: " + str(score), 1, (0,0,0)) # Draw the score
+	win.blit(text, (390, 10))
+
 	man.draw(win) # Draw the player
 	goblin.draw(win) # Draw the enemy
 	for bullet in bullets: # Draw the bullets
 		bullet.draw(win)
-	pygame.display.update() # Have to update the display to draw the object
+
+	pygame.display.update() # Have to update the display the objects that are "blitted"
 
 # Main loop
+font = pygame.font.SysFont("comicsans", 30, True)
 man = player(250, 400, 64, 64) # Instantiate the player with default/init values, 64 x 64 = dimensions of the sprite
 goblin = enemy(30, 400, 64, 64, 400) # Instantiate the enemy with default/init values, 64 x 64 = dimensions of the sprite
 shootLoop = 0 # Reduce bullet spamming var
@@ -157,6 +171,7 @@ while run:
 		if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]: # Check within Y coords
 			if bullet.x + bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]: # Check within x coords
 				goblin.hit()
+				score += 1 # Increment the player score
 				bullets.pop(bullets.index(bullet)) # Make bullet disappear
 
 		if bullet.x < WIN_WIDTH and bullet.x > 0: # If bullet is on the screen, move it
