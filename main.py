@@ -1,5 +1,6 @@
 	# Pygame General Tutorial
 import pygame
+pygame.font.init()
 
 WIN_WIDTH = 500
 WIN_HEIGHT = 480
@@ -29,6 +30,8 @@ class enemy(object):
 		self.walkCount = 0 # Walk action counter
 		self.vel = 3
 		self.path = [self.x, self.end] # X Coordinates of where enemy starts and where ends
+		self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+		self.numHits = 0
 
 	def draw(self, win):
 		self.move()
@@ -42,6 +45,13 @@ class enemy(object):
 		else: # If vel is negative, enemy is moving left
 			win.blit(self.walkLeft[self.walkCount//3], (self.x, self.y)) # Index to the correct frame, using integer division
 			self.walkCount += 1
+		self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+
+		hits_font = pygame.font.SysFont("comicsans", 30)
+		hits_label = hits_font.render(f"Goblin Hits: {self.numHits}", 1, (255,0,0))
+		win.blit(hits_label, (WIN_WIDTH/2 - hits_label.get_width()/2, 10))
+		
+		pygame.draw.rect(win, (255,0,0), (self.hitbox), 2)
 
 
 	def move(self):
@@ -57,6 +67,9 @@ class enemy(object):
 			else: # At end of path, flip and switch direction
 				self.vel = self.vel * -1
 				self.walkCount = 0
+
+	def hit(self):
+		self.numHits += 1
 
 
 class projectile(object):
@@ -85,6 +98,8 @@ class player(object):
 		self.right = False # Right walk action flag
 		self.walkCount = 0 # Walk action counter
 		self.standing = True # Standing or moving flag
+		self.hitbox = (self.x + 17, self.y + 11, 29, 52)
+
 
 	def draw(self, win):
 		if self.walkCount + 1 >= 27: # 27 = 3 x 9 player sprite frames
@@ -103,6 +118,8 @@ class player(object):
 				win.blit(walkRight[0], (self.x, self.y))
 			else:
 				win.blit(walkLeft[0], (self.x, self.y))
+		self.hitbox = (self.x + 17, self.y + 11, 29, 52)
+		pygame.draw.rect(win, (255,0,0), (self.hitbox), 2)
 
 
 def redrawGameWindow():
@@ -116,6 +133,7 @@ def redrawGameWindow():
 # Main loop
 man = player(250, 400, 64, 64) # Instantiate the player with default/init values, 64 x 64 = dimensions of the sprite
 goblin = enemy(30, 400, 64, 64, 400) # Instantiate the enemy with default/init values, 64 x 64 = dimensions of the sprite
+shootLoop = 0 # Reduce bullet spamming var
 bullets = [] # This list is way to implement multiple bullets.
 run = True
 
@@ -123,20 +141,33 @@ while run:
 
 	clock.tick(27) # Set FPS
 
+	# Basic shootLoop timer to delay each additional bullet
+	if shootLoop > 0:
+		shootLoop += 1
+	if shootLoop > 3:
+		shootLoop = 0
+
 	for event in pygame.event.get(): # Check pygame for any events/anything that happens from the user
 		if event.type == pygame.QUIT: # If quit event, quit the loop
 			run = False
 
 	for bullet in bullets: # Multple bullet handling routing
+
+		# Bullet collision check
+		if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]: # Check within Y coords
+			if bullet.x + bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]: # Check within x coords
+				goblin.hit()
+				bullets.pop(bullets.index(bullet)) # Make bullet disappear
+
 		if bullet.x < WIN_WIDTH and bullet.x > 0: # If bullet is on the screen, move it
 			bullet.x += bullet.vel
 		else: # If bullet is not on the screen, pop it from the list and remove it
-			bullets.pop(bullets.index(bullet))
+			bullets.pop(bullets.index(bullet)) # Make bullet disappear
 			
 
 	keys = pygame.key.get_pressed()
 
-	if keys[pygame.K_SPACE]: # Shoot Action Key
+	if keys[pygame.K_SPACE] and shootLoop == 0: # Shoot Action Key, constrain the number of bullets using shootLoop
 		if man.left: # If man is facing left...
 			facing  = -1
 		else:
@@ -144,6 +175,7 @@ while run:
 		if len(bullets) < 5: # This is the max amount of bullets that shooter can have on screen at once, can't spam bullets
 			bullets.append(projectile(round(man.x + man.width //2), round(man.y + man.height //2), 6, (0,0,0), facing)) # Append the bullets list with a newly created/instantiated projectile
 
+		shootLoop = 1
 
 	if keys[pygame.K_LEFT] and man.x > 0: # Have to constrain the edges...
 		man.x -= man.vel
