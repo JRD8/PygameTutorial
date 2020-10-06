@@ -1,9 +1,10 @@
-	# Pygame General Tutorial
+# Pygame General Tutorial
 import pygame
-pygame.font.init()
 
 WIN_WIDTH = 500
 WIN_HEIGHT = 480
+pygame.mixer.init()
+pygame.font.init()
 
 win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT)) # Set screen size parameters
 
@@ -14,6 +15,13 @@ walkRight = [pygame.image.load("assets/R1.png"), pygame.image.load('assets/R2.pn
 walkLeft = [pygame.image.load('assets/L1.png'), pygame.image.load('assets/L2.png'), pygame.image.load('assets/L3.png'), pygame.image.load('assets/L4.png'), pygame.image.load('assets/L5.png'), pygame.image.load('assets/L6.png'), pygame.image.load('assets/L7.png'), pygame.image.load('assets/L8.png'), pygame.image.load('assets/L9.png')]
 bg = pygame.image.load("assets/bg.jpg")
 char = pygame.image.load('assets/standing.png')
+
+# Load SFX and play music
+bulletSound = pygame.mixer.Sound("assets/bullet.wav")
+hitSound = pygame.mixer.Sound("assets/hit.wav")
+music = pygame.mixer.music.load("assets/music.wav")
+pygame.mixer.music.set_volume(0.6) 
+pygame.mixer.music.play(-1)
 
 clock = pygame.time.Clock()
 
@@ -129,6 +137,23 @@ class player(object):
 		self.hitbox = (self.x + 17, self.y + 11, 29, 52)
 		# pygame.draw.rect(win, (255,0,0), (self.hitbox), 2)
 
+	def hit(self):
+		self.x = 10
+		self.y = 400
+		self.walkCount = 0
+		font1 = pygame.font.SysFont("comicsans", 100)
+		text = font1.render("-5", 1, (255, 0, 0)) # Feedback to player the collision -5
+		win.blit(text, (250 - (text.get_width()/2), 200))
+		pygame.display.update()
+		i = 0
+		while i < 150: # Need a delay or score penalty alertFui wont stay on screen
+			pygame.time.delay(10)
+			i += 1
+			for event in pygame.event.get(): # Check pygame for any events/anything that happens from the user
+				if event.type == pygame.QUIT: # If quit event, quit the loop
+					i = 301
+					pygame.quit()
+
 
 def redrawGameWindow():
 	win.blit(bg, (0,0)) # Draw the background
@@ -155,6 +180,12 @@ while run:
 
 	clock.tick(27) # Set FPS
 
+	# Check player/goblin collison
+	if man.hitbox[1] < goblin.hitbox[1] + goblin.hitbox[3] and man.hitbox[1] + man.hitbox[3] > goblin.hitbox[1]: # Check within Y coords
+		if man.hitbox[0] + man.hitbox[2] > goblin.hitbox[0] and man.hitbox[0] < goblin.hitbox[0] + goblin.hitbox[2]: # Check within x coords
+			man.hit()
+			score -= 5 # Decrease player score -5
+
 	# Basic shootLoop timer to delay each additional bullet
 	if shootLoop > 0:
 		shootLoop += 1
@@ -170,6 +201,7 @@ while run:
 		# Bullet collision check
 		if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]: # Check within Y coords
 			if bullet.x + bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]: # Check within x coords
+				hitSound.play()
 				goblin.hit()
 				score += 1 # Increment the player score
 				bullets.pop(bullets.index(bullet)) # Make bullet disappear
@@ -183,6 +215,7 @@ while run:
 	keys = pygame.key.get_pressed()
 
 	if keys[pygame.K_SPACE] and shootLoop == 0: # Shoot Action Key, constrain the number of bullets using shootLoop
+		bulletSound.play()
 		if man.left: # If man is facing left...
 			facing  = -1
 		else:
@@ -225,6 +258,7 @@ while run:
 		else:
 			man.isJump = False # Reset jump action flag
 			man.jumpCount = 10 # Reinitialize the jump counter
+			man.y = 400
 
 	redrawGameWindow()
 
