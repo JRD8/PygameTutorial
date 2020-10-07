@@ -138,6 +138,8 @@ class player(object):
 		# pygame.draw.rect(win, (255,0,0), (self.hitbox), 2)
 
 	def hit(self):
+		self.isJump = False
+		self.jumpCount = 10
 		self.x = 10
 		self.y = 400
 		self.walkCount = 0
@@ -159,7 +161,7 @@ def redrawGameWindow():
 	win.blit(bg, (0,0)) # Draw the background
 
 	text = font.render("Score: " + str(score), 1, (0,0,0)) # Draw the score
-	win.blit(text, (390, 10))
+	win.blit(text, (360, 10))
 
 	man.draw(win) # Draw the player
 	goblin.draw(win) # Draw the enemy
@@ -181,10 +183,11 @@ while run:
 	clock.tick(27) # Set FPS
 
 	# Check player/goblin collison
-	if man.hitbox[1] < goblin.hitbox[1] + goblin.hitbox[3] and man.hitbox[1] + man.hitbox[3] > goblin.hitbox[1]: # Check within Y coords
-		if man.hitbox[0] + man.hitbox[2] > goblin.hitbox[0] and man.hitbox[0] < goblin.hitbox[0] + goblin.hitbox[2]: # Check within x coords
-			man.hit()
-			score -= 5 # Decrease player score -5
+	if goblin.visible:
+		if man.hitbox[1] < goblin.hitbox[1] + goblin.hitbox[3] and man.hitbox[1] + man.hitbox[3] > goblin.hitbox[1]: # Check within Y coords
+			if man.hitbox[0] + man.hitbox[2] > goblin.hitbox[0] and man.hitbox[0] < goblin.hitbox[0] + goblin.hitbox[2]: # Check within x coords
+				man.hit()
+				score -= 5 # Decrease player score -5
 
 	# Basic shootLoop timer to delay each additional bullet
 	if shootLoop > 0:
@@ -258,7 +261,6 @@ while run:
 		else:
 			man.isJump = False # Reset jump action flag
 			man.jumpCount = 10 # Reinitialize the jump counter
-			man.y = 400
 
 	redrawGameWindow()
 
